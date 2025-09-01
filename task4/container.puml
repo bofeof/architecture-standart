@@ -4,7 +4,7 @@
 
 title Диаграмма контейнера (2-й уровень)
 
-Component(abs, "АБС", ".NET")
+Component(abs, "АБС", "Delphi")
 System_Ext(partnerCrm, "CRM партнёра")
 
 Container_Boundary(deposit, "Микросервис депозитов") {
@@ -30,7 +30,7 @@ Container_Boundary(export_svc, "Микросервис выгрузки") {
 }
 
 
-Container(kafka, "Kafka", "Топик: rates.changed")
+Container(kafka, "Kafka", "Топик: rates.changed \ rates.modified")
 Container(sftp, "SFTP-сервер")
 
 Rel(kafkaConsumerDeposit, kafka,  "Данные ставок. Cинхронизация с АБС")
