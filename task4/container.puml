@@ -2,7 +2,7 @@
 
 !include <C4/C4_Component>
 
-title Диаграмма контейнера (2-й уровень)
+title Диаграмма контейнеров (2-й уровень)
 
 Component(abs, "АБС", "Delphi")
 System_Ext(partnerCrm, "CRM партнёра")
@@ -19,9 +19,9 @@ Container_Boundary(deposit, "Микросервис депозитов") {
 Container_Boundary(export_svc, "Микросервис выгрузки") {
     Component(sftpUploader, "SFTP клиент", "C#")
     Component(kafkaConsumer, "Kafka Consumer", "C#")
-    Component(rate_fetcher, "Ядро", "C#")
+    Component(rate_fetcher, "Ядро", ".NET")
     Component(file_generator, "Генератор файлов", "C#")
-
+    Container(sftp, "SFTP-сервер")
 
     Rel(kafkaConsumer, rate_fetcher, "Триггер запроса")
     Rel(rate_fetcher, core, "GET /api/rates /HTTP")
@@ -31,12 +31,12 @@ Container_Boundary(export_svc, "Микросервис выгрузки") {
 
 
 Container(kafka, "Kafka", "Топик: rates.changed \ rates.modified")
-Container(sftp, "SFTP-сервер")
+
 
 Rel(kafkaConsumerDeposit, kafka,  "Данные ставок. Cинхронизация с АБС")
 Rel(abs, kafka, "Данные ставок")
 Rel(kafkaProducer, kafka, "Отправка событий. Ставки обновлены и можно скачивать")
 Rel(kafkaConsumer, kafka, "Чтение событий по изменениям ставок")
 Rel(sftpUploader, sftp, "Загрузка файла")
-Rel(partnerCrm, sftp, "Получение файла со ставками")
+Rel(partnerCrm, sftp, "Получение файла со ставками. Доступ в гостевом read-only режиме")
 @enduml
