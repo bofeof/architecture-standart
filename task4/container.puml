@@ -1,0 +1,42 @@
+@startuml
+
+!include <C4/C4_Component>
+
+title Диаграмма контейнеров (2-й уровень)
+
+Component(abs, "АБС", "Delphi")
+System_Ext(partnerCrm, "CRM партнёра")
+
+Container_Boundary(deposit, "Микросервис депозитов") {
+    Component(kafkaConsumerDeposit, "Kafka Consumer", "C#")
+    Component(kafkaProducer, "Kafka Producer", "C#")
+    Component(core, "Ядро", ".NET")
+
+    Rel(kafkaConsumerDeposit, core, "Информация по ставкам")
+    Rel(core, kafkaProducer, "Событие изменения: обновлены ставки")
+}
+
+Container_Boundary(export_svc, "Микросервис выгрузки") {
+    Component(sftpUploader, "SFTP клиент", "C#")
+    Component(kafkaConsumer, "Kafka Consumer", "C#")
+    Component(rate_fetcher, "Ядро", ".NET")
+    Component(file_generator, "Генератор файлов", "C#")
+    Container(sftp, "SFTP-сервер")
+
+    Rel(kafkaConsumer, rate_fetcher, "Триггер запроса")
+    Rel(rate_fetcher, core, "GET /api/rates /HTTP")
+    Rel(rate_fetcher, file_generator, "Данные ставок")
+    Rel(rate_fetcher, sftpUploader, "Файл")
+}
+
+
+Container(kafka, "Kafka", "Топик: rates.changed \ rates.modified")
+
+
+Rel(kafkaConsumerDeposit, kafka,  "Данные ставок. Cинхронизация с АБС")
+Rel(abs, kafka, "Данные ставок")
+Rel(kafkaProducer, kafka, "Отправка событий. Ставки обновлены и можно скачивать")
+Rel(kafkaConsumer, kafka, "Чтение событий по изменениям ставок")
+Rel(sftpUploader, sftp, "Загрузка файла")
+Rel(partnerCrm, sftp, "Получение файла со ставками. Доступ в гостевом read-only режиме")
+@enduml

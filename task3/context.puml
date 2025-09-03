@@ -1,0 +1,41 @@
+@startuml context_diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Диаграмма контекста (1-й уровень)
+
+Person(client, "Клиент", "Физическое лицо")
+Person(backOffice, "Сотрудник бэк-офиса", "Обработка входящих заявок по обслуживанию")
+Person(operator, "Оператор кол-центра", "Обслуживает клиентов через специальный модуль в CRM")
+
+Container(apiGateway, "API Gateway", "Kong")
+
+System_Boundary(systems, "Банковские системы") {
+    System(abs, "АБС", "Oracle", "Внутренняя АБС система банка")
+    System(crm, "CRM кол-центра", "Java + PostgreSQL", "Система управления клиентскими обращениями")
+    System(website, "Сайт для подачи заявок", "PHP + React", "Веб-интерфейс")
+    System(sms_gateway, "СМС-шлюз", "-", "SMS-уведомления")
+    System(onlineBank, "Интернет-банк", ".NET + SQL", "Система онлайн-банкинга")
+}
+
+
+Rel(client, apiGateway, "Подача заявки")
+Rel(backOffice, apiGateway, "Осуществление обработки заявок")
+Rel(operator, apiGateway, "Работа с телефонными вызовами")
+
+Rel(apiGateway, website, "Подача заявки")
+Rel(apiGateway, onlineBank, "Открытие депозита")
+Rel(apiGateway, abs, "Осуществление обработки заявок")
+Rel(apiGateway, crm, "Работа с телефонными вызовами")
+
+
+Rel(onlineBank, abs, "Заявка", "HTTP")
+' Rel_Neighbor(backOffice, abs, "Осуществление обработки заявок")
+' Rel_Neighbor(operator, crm, "Работа с телефонными вызовами")
+
+
+Rel(website, crm, "Заявка", "HTTP")
+Rel(abs, sms_gateway, "Отправка уведомления", "HTTP/SMPP")
+Rel(crm, sms_gateway, "Отправка уведомления", "HTTP/SMPP")
+
+@enduml

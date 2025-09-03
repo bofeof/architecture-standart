@@ -1,0 +1,52 @@
+@startuml container_diagram
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Диаграмма контейнеров (2-й уровень)
+
+Person(client, "Клиент", "Физическое лицо")
+Person(backOffice, "Сотрудник бэк-офиса", "Обрабатывает заявки в АБС, в том числе на депозиты")
+Person(operator, "Оператор кол-центра", "Работа с клиентом через специальный модуль в CRM")
+
+Container(apiGateway, "API Gateway", "Kong")
+
+System_Boundary(abc, "ABC система банка") {
+    Container(abcMonolith, "ABC", "Delphi")
+    ContainerDb(abcDb, "ABC БД", "Oracle")
+    Rel(abcMonolith, abcDb, "Запросы", "SQL")
+}
+
+System_Boundary(crm, "CRM кол-центра") {
+    Container(crmService, "Сервис CRM кол-центра", "Java")
+}
+
+System_Boundary(online_bank, "Интернет-банк") {
+    Container(onlineBankService, "Сервис интернет-банк", ".NET", "")
+    ContainerDb(onlineBankDB, "База данных\n интернет-банка", "MSSQL")
+    Container(depositService, "Микросервис депозитов", ".NET")
+    ContainerDb(depositCache, "Кеш депозитов", "Redis")
+    ContainerQueue(kafka, "Брокер сообщений", "Kafka")
+
+    Rel(depositService, depositCache, "")
+    Rel(onlineBankService, onlineBankDB, "")
+    Rel(onlineBankService, depositService, "Делает запросы", "HTTP")
+}
+
+System_Ext(smsGateway, "SMS-шлюз")
+
+Rel(client, apiGateway, "Использует")
+Rel(operator, apiGateway, "Использует")
+Rel(backOffice, apiGateway, "Использует")
+
+Rel(apiGateway, onlineBankService, "Использует")
+Rel(apiGateway, abcMonolith, "Использует")
+Rel(apiGateway, crmService, "Использует")
+
+Rel(abcMonolith, smsGateway, "Отправка СМС")
+Rel(depositService, kafka, "Отправка заявок на депозит", "TCP")
+Rel(onlineBankService, kafka, "Отправка информации о платежах", "TCP")
+Rel(kafka, abcMonolith, "Отправка заявок", "TCP")
+Rel(crmService, depositService, "Отправка заявок", "HTTP")
+
+
+@enduml

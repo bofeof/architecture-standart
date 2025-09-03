@@ -1,0 +1,37 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Диаграмма контекста (1-й уровень)
+
+Person(operator, "Оператор кол-центра")
+Person_Ext(partnerOperator, "Оператор кол-центра партнера")
+Person(client, "Клиент")
+
+Container(apiGateway, "API Gateway", "Kong")
+
+Rel(client, partnerOperator, "Получает консультацию")
+Rel(client, operator, "Получает консультацию")
+
+System_Boundary(bank, "Банк") {
+    Container(depositService, "Микросервис депозитов", ".NET", "Управление ставками")
+    Container(exportService, "Микросервис выгрузки ставок депозитов", ".NET", "Обработка событий")
+    Container(crm, "CRM кол-центра", "Java")
+    Container(sftp, "SFTP-сервер")
+    ContainerQueue(kafka, "Брокер сообщений", "Apache Kafka")
+}
+
+System_Ext(partnerCrm, "CRM партнера")
+
+Rel(operator, apiGateway, "Просмотр ставок")
+Rel(apiGateway, crm, "Просмотр ставок")
+
+Rel(partnerOperator, partnerCrm, "Просмотр ставок, загрузка актуальных данных к себе")
+
+Rel(depositService, kafka, "Отправка события", "Топик rates.сhanged или rates.modified")
+Rel(kafka, exportService, "Получение события")
+Rel(exportService, depositService, "Запрос ставок", "HTTP")
+Rel(exportService, sftp, "Выгрузка файла", "SFTP")
+Rel(sftp, partnerCrm, "Автозагрузка", "SFTP")
+Rel(depositService, crm, "Уведомление об изменении", "HTTP/Webhook")
+
+@enduml
